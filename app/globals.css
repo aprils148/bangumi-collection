@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 51, 51, 51;
+  --background-rgb: 248, 249, 250;
+}
+
+.dark {
+  --foreground-rgb: 225, 225, 230;
+  --background-rgb: 18, 19, 24;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+/* 自定義滾動條 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: theme('colors.primary.DEFAULT');
+  border-radius: 1rem;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: theme('colors.primary.dark');
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* 文字漸變效果 */
+.text-gradient {
+  @apply text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary;
+}
+
+.dark .text-gradient {
+  @apply from-primary-light to-secondary-light;
+}
+
+/* 玻璃效果 */
+.glass {
+  @apply backdrop-blur-md bg-white/70 dark:bg-black/30 rounded-2xl;
+}
+
+/* 自定義動畫 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* 淡入並向上移動的動畫，用於 Trending 區塊 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* 隱藏滾動條但保留功能 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+@layer components {
+  .btn {
+    @apply py-2 px-4 rounded-xl font-medium transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-light active:scale-95 shadow-md;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-white hover:bg-secondary-light active:scale-95 shadow-md;
+  }
+  
+  .card {
+    @apply bg-card dark:bg-card-dark rounded-2xl shadow-md dark:shadow-xl dark:shadow-black/10 overflow-hidden transition-all duration-300;
+  }
+  
+  .input {
+    @apply w-full p-2 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-light bg-white dark:bg-card-dark transition-all duration-300;
+  }
+
+  /* 頁面轉場動畫 */
+  .page-transition-enter {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  
+  .page-transition-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  
+  .page-transition-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .page-transition-exit-active {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+
+  /* 圖像懸停效果 */
+  .hover-scale {
+    @apply transition-transform duration-500;
+  }
+  
+  .hover-scale:hover {
+    @apply scale-110;
+  }
+
+  /* 黑白漸變背景 */
+  .gradient-bg {
+    @apply bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-900 dark:to-black;
+  }
+
+  /* 現代感黑色漸層背景 */
+  .modern-dark-gradient {
+    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-black;
+  }
+
+  /* 帶藍色調的現代黑色漸層 */
+  .modern-dark-blue-gradient {
+    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+    background-image: radial-gradient(circle at 10% 20%, rgb(21, 21, 21) 0%, rgb(5, 8, 22) 90%);
+  }
+
+  /* 漂亮的卡片懸停效果 */
+  .card-hover {
+    @apply hover:shadow-lg transition-shadow duration-300 hover:translate-y-[-4px];
+  }
+} 

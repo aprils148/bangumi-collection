@@ -1,0 +1,219 @@
+import Link from 'next/link';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+import { getAnimeDetails, getAnimeChineseTitle } from '../../lib/api';
+import type { Metadata, ResolvingMetadata } from 'next';
+import { Suspense } from 'react';
+import { AnimeBanner } from '../../components/AnimeBanner';
+import { AnimeInfo } from '../../components/AnimeInfo';
+import { AnimeDescription } from '../../components/AnimeDescription';
+import { AnimeCharacters } from '../../components/AnimeCharacters';
+import { AnimeRelations } from '../../components/AnimeRelations';
+import { AnimeRecommendations } from '../../components/AnimeRecommendations';
+import { BackToTop } from '../../components/BackToTop';
+import { AnimeDetailSkeleton } from '../../components/AnimeDetailSkeleton';
+import AnimeGenres from '../../components/AnimeGenres';
+
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+// 生成動態元數據（包括標題）
+export async function generateMetadata(
+  { params }: PageProps,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const id = params.id;
+  
+  // 檢查是否為特殊路由
+  if (id === 'latest') {
+    return {
+      title: '最新動漫 | Bangumi',
+      description: '最新上映的動漫作品 - 使用AniList API和維基數據的中文動漫資訊平台',
+    };
+  }
+  
+  if (id === 'popular') {
+    return {
+      title: '熱門動漫 | Bangumi',
+      description: '最受歡迎的動漫作品 - 使用AniList API和維基數據的中文動漫資訊平台',
+    };
+  }
+  
+  // 驗證ID是否為有效數字
+  const numericId = parseInt(id);
+  if (isNaN(numericId)) {
+    return {
+      title: '無效的動漫ID | Bangumi',
+      description: '無效的動漫ID - 使用AniList API和維基數據的中文動漫資訊平台',
+    };
+  }
+  
+  try {
+    // 嘗試獲取動漫數據以豐富元數據
+    const anime = await getAnimeDetails(numericId);
+    // 從wikidata獲取中文標題
+    const chineseTitle = getAnimeChineseTitle(id);
+    
+    return {
+      title: chineseTitle ? `${chineseTitle} | Bangumi` : (anime?.title?.native ? `${anime.title.native} | Bangumi` : '動漫詳情 | Bangumi'),
+      description: anime?.description 
+        ? `${anime.description.replace(/<[^>]*>/g, '').slice(0, 155)}... - 中文動漫資訊平台` 
+        : '動漫詳細資訊 - 使用AniList API和維基數據的中文動漫資訊平台',
+      openGraph: {
+        title: chineseTitle || anime?.title?.native || '動漫詳情',
+        description: anime?.description?.replace(/<[^>]*>/g, '').slice(0, 155) || '動漫詳細資訊',
+        images: [anime?.bannerImage || anime?.coverImage?.large || ''],
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: chineseTitle || anime?.title?.native || '動漫詳情',
+        description: anime?.description?.replace(/<[^>]*>/g, '').slice(0, 155) || '動漫詳細資訊',
+        images: [anime?.bannerImage || anime?.coverImage?.large || ''],
+      }
+    };
+  } catch (error) {
+    return {
+      title: '動漫詳情 | Bangumi',
+      description: '使用AniList API和維基數據的中文動漫資訊平台',
+    };
+  }
+}
+
+async function AnimeDetailPage({ params }: PageProps) {
+  try {
+    // 檢查是否為特殊路由
+    if (params.id === 'latest' || params.id === 'popular') {
+      return (
+        <>
+          <Header />
+          <div className="flex flex-col items-center justify-center py-20">
+            <h2 className="text-2xl font-bold mb-4">正在重定向</h2>
+            <p className="mb-6">請使用搜尋功能或返回首頁查找動漫。</p>
+            <div className="flex gap-4">
+              <Link href="/" className="btn btn-primary">
+                返回首頁
+              </Link>
+              <Link href="/search" className="btn btn-secondary">
+                搜尋作品
+              </Link>
+            </div>
+          </div>
+          <Footer />
+        </>
+      );
+    }
+
+    // 驗證ID是否為有效數字
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      console.error(`無效的動漫ID: ${params.id}`);
+      return (
+        <>
+          <Header />
+          <div className="flex flex-col items-center justify-center py-20">
+            <h2 className="text-2xl font-bold mb-4">無效的動漫ID</h2>
+            <p className="mb-6">提供的ID「{params.id}」不是有效的數字。</p>
+            <Link href="/" className="btn btn-primary">
+              返回首頁
+            </Link>
+          </div>
+          <Footer />
+        </>
+      );
+    }
+
+    // 獲取數據
+    const animePromise = getAnimeDetails(id);
+    // 從wikidata獲取中文標題
+    const chineseTitle = getAnimeChineseTitle(id);
+    
+    // 等待查詢結果
+    const anime = await animePromise;
+
+    if (!anime) {
+      return (
+        <>
+          <Header />
+          <div className="flex flex-col items-center justify-center py-20">
+            <h2 className="text-2xl font-bold mb-4">未找到動漫</h2>
+            <p className="mb-6">找不到ID為 {id} 的動漫作品。</p>
+            <Link href="/" className="btn btn-primary">
+              返回首頁
+            </Link>
+          </div>
+          <Footer />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Header />
+        
+        <Suspense fallback={<AnimeDetailSkeleton />}>
+          <div className="mb-8">
+            {anime.bannerImage && (
+              <AnimeBanner 
+                bannerImage={anime.bannerImage}
+                title={chineseTitle || anime.title.native || anime.title.romaji}
+              />
+            )}
+
+            <div className="flex flex-col md:flex-row gap-8">
+              <AnimeInfo anime={anime} chineseTitle={chineseTitle} />
+
+              <div className="w-full md:w-2/3 lg:w-3/4">
+                <AnimeDescription 
+                  description={anime.description || ''} 
+                  title={anime.title}
+                  chineseTitle={chineseTitle}
+                />
+
+                {anime.characters && anime.characters.edges.length > 0 && (
+                  <AnimeCharacters characters={anime.characters} />
+                )}
+
+                {anime.relations && anime.relations.edges.length > 0 && (
+                  <AnimeRelations relations={anime.relations} />
+                )}
+
+                {anime.recommendations && anime.recommendations.nodes.length > 0 && (
+                  <AnimeRecommendations recommendations={anime.recommendations} />
+                )}
+              </div>
+            </div>
+          </div>
+        </Suspense>
+        
+        <BackToTop />
+        <Footer />
+      </>
+    );
+  } catch (error) {
+    console.error(`動漫詳情頁面錯誤 (ID: ${params.id}):`, error);
+    return (
+      <>
+        <Header />
+        <div className="flex flex-col items-center justify-center py-20">
+          <h2 className="text-2xl font-bold mb-4 text-red-600">載入出錯</h2>
+          <p className="mb-6">獲取動漫資訊時發生錯誤，請稍後再試。</p>
+          <div className="flex gap-4">
+            <Link href="/" className="btn btn-primary">
+              返回首頁
+            </Link>
+            <Link href="/search" className="btn btn-secondary">
+              搜尋作品
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+}
+
+export default AnimeDetailPage; 
